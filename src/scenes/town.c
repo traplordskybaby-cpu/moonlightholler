@@ -120,7 +120,7 @@ static uint8_t buddy_step;
 static drop_t drops[DROPS];
 
 /* ---- window box (dialogue / menus) ---- */
-static uint8_t mode;
+static uint8_t ui_mode;
 static uint8_t hud_y;
 static uint8_t dlg_first;
 static uint8_t dlg_count;
@@ -1139,7 +1139,7 @@ static void dialog_open(uint8_t id) {
     dlg_first = ent[0];
     dlg_count = ent[2];
     dlg_page = 0;
-    mode = M_TALK;
+    ui_mode = M_TALK;
     box_open();
     dialog_show();
     sound_effect();
@@ -1149,7 +1149,7 @@ static void dialog_input(uint8_t pressed) {
     if (pressed & (J_A | J_B)) {
         dlg_page++;
         if (dlg_page >= dlg_count) {
-            mode = M_PLAY;
+            ui_mode = M_PLAY;
             box_close();
             if (after_dialog) {
                 after_dialog = 0;
@@ -1186,7 +1186,7 @@ static void menu_draw(void) {
 }
 
 static void menu_open(uint8_t kind) {
-    mode = M_MENU;
+    ui_mode = M_MENU;
     menu_kind = kind;
     menu_sel = 0;
     menu_msg = 0;
@@ -1216,7 +1216,7 @@ static void sleep_now(void) {
     hud_sprites();
     fade_apply(0);
     fade_in();
-    mode = M_PLAY;
+    ui_mode = M_PLAY;
     dialog_open(DLG_SLEEP);
 }
 
@@ -1226,7 +1226,7 @@ static void menu_action(void) {
         if (menu_sel == 0) {
             sleep_now();
         } else {
-            mode = M_PLAY;
+            ui_mode = M_PLAY;
             box_close();
         }
         return;
@@ -1276,7 +1276,7 @@ static void menu_action(void) {
 
 static void menu_input(uint8_t pressed) {
     if (pressed & J_B) {
-        mode = M_PLAY;
+        ui_mode = M_PLAY;
         box_close();
     } else if (pressed & J_UP) {
         if (menu_sel > 0) {
@@ -1463,7 +1463,7 @@ void town_enter(void) {
         seed();
     }
     frame = 0;
-    mode = M_PLAY;
+    ui_mode = M_PLAY;
     hud_y = 0;
     rt_scene_enter();
     style_common();
@@ -1496,7 +1496,7 @@ uint8_t town_debug_area(void) {
 void town_debug_state(uint8_t *out) {
     uint8_t i;
     out[0] = area; out[1] = hx; out[2] = hy; out[3] = view_x; out[4] = view_y; out[5] = gold;
-    out[6] = day; out[7] = hour; out[8] = mode; out[9] = quest[0]; out[10] = quest[1];
+    out[6] = day; out[7] = hour; out[8] = ui_mode; out[9] = quest[0]; out[10] = quest[1];
     memcpy(out + 11, crops, 5);
     for (i = 0; i < nnpc && i < 4; i++) {
         out[16 + i * 2] = npcs[i].x;
@@ -1607,9 +1607,9 @@ static uint8_t play_frame(uint8_t keys, uint8_t pressed) {
 uint8_t town_frame(uint8_t keys, uint8_t prev) {
     uint8_t pressed = (uint8_t)(keys & ~prev);
     uint8_t next = SECTION_TOWN;
-    if (mode == M_TALK) {
+    if (ui_mode == M_TALK) {
         dialog_input(pressed);
-    } else if (mode == M_MENU) {
+    } else if (ui_mode == M_MENU) {
         menu_input(pressed);
     } else {
         next = play_frame(keys, pressed);
@@ -1618,7 +1618,7 @@ uint8_t town_frame(uint8_t keys, uint8_t prev) {
                 sound_effect();
             } else if (redraws) {
                 plot_draw(redraw[--redraws]);
-            } else if (hud_dirty && !(frame & 1) && mode == M_PLAY) {
+            } else if (hud_dirty && !(frame & 1) && ui_mode == M_PLAY) {
                 uint8_t k = 0;
                 while (!(hud_dirty & (1 << k))) {
                     k++;
@@ -1634,7 +1634,7 @@ uint8_t town_frame(uint8_t keys, uint8_t prev) {
     }
     sound_music(frame);
     frame++;
-    if (mode == M_PLAY && next == SECTION_TOWN) {
+    if (ui_mode == M_PLAY && next == SECTION_TOWN) {
         move_bkg(view_x, view_y);
         if (LY_REG < 62 || LY_REG >= 144) {
             draw();
