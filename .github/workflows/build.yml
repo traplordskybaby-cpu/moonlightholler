@@ -1,3 +1,5 @@
+# Builds the ROM in the cloud so nothing needs to be installed on your computer.
+# Push this folder to a GitHub repository, open the "Actions" tab, and download "moonlight-holler-rom".
 name: Build ROM
 on:
   push:
@@ -15,9 +17,20 @@ jobs:
         run: |
           curl -L -o gbdk.tar.gz https://github.com/gbdk-2020/gbdk-2020/releases/latest/download/gbdk-linux64.tar.gz
           tar xzf gbdk.tar.gz
+      - name: Build debug ROM
+        run: |
+          make GBDK_HOME=$PWD/gbdk/ EXTRA=-DBOOT_DEBUG
+          cp build/moonlight-holler.gb build/moonlight-holler-debug.gb
       - name: Build
         run: make GBDK_HOME=$PWD/gbdk/
+      - name: ROM info
+        run: |
+          ls -l build/*.gb build/game.map || true
+          xxd -l 336 build/moonlight-holler.gb | tail -8
+          grep -E "^ +(_HOME|_CODE|_DATA|_INITIALIZER|_INITIALIZED|_GSINIT|_BASE)" build/game.map | head -20 || true
       - uses: actions/upload-artifact@v4
         with:
           name: moonlight-holler-rom
-          path: build/moonlight-holler.gb
+          path: |
+            build/moonlight-holler.gb
+            build/moonlight-holler-debug.gb
