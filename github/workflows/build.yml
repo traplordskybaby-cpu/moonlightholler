@@ -1,0 +1,23 @@
+name: Build ROM
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install pillow
+      - name: Download GBDK-2020
+        run: |
+          curl -L -o gbdk.tar.gz https://github.com/gbdk-2020/gbdk-2020/releases/latest/download/gbdk-linux64.tar.gz
+          tar xzf gbdk.tar.gz
+      - name: Build
+        run: make GBDK_HOME=$PWD/gbdk/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: moonlight-holler-rom
+          path: build/moonlight-holler.gb
